@@ -1,0 +1,17 @@
+[package]
+name = "crawler"
+version = "0.1.0"
+authors = ["Hongjie Zhai <zhaihj@live.jp>"]
+
+[dependencies]
+hyper = "0.9"
+select = "0.3"
+
+[[bin]]
+path = "src/main_wt.rs"
+name = "main_wt"
+
+[[bin]]
+path = "src/main.rs"
+name = "main_nt"
+
