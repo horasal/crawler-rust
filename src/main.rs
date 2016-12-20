@@ -22,11 +22,14 @@ impl News {
         News { text: t.into(), addr: a.into(), summary: s.into() }
     }
 
-    fn walk(&self, client: &mut client::Client, cookie: &Cookie) -> String {
+    fn walk(&self, client: &mut client::Client, cookie: Option<Cookie>) -> String {
         client.set_redirect_policy(client::RedirectPolicy::FollowNone);
         let mut headers = Headers::new();
         headers.set(UserAgent("Mozilla/5.0 (Windows NT 5.2; rv:2.0.1) Gecko/20100101 Firefox/4.0.1".to_string()));
-        headers.set(cookie.clone());
+        match cookie {
+            Some(cookie) => headers.set(cookie.clone()),
+            None => { headers.set(Cookie(vec![])); },
+        };
         let mut res = client.get(self.addr.trim()).headers(headers.clone()).send().unwrap();
         while res.status == StatusCode::MovedPermanently || 
               res.status == StatusCode::Found || 
@@ -79,11 +82,10 @@ fn main() {
             News::new(news.text(), news.attr("href").unwrap().to_string(), node.find(Class("summary")).iter().next().unwrap().text())
          }))).filter(|x| x.is_some()).map(|x|x.unwrap()).filter(|x|x.is_some()).map(|x|x.unwrap()).collect::<Vec<_>>();
 
-    let setcookie = res.headers.get::<SetCookie>().unwrap();
-    let cookie = Cookie(setcookie.0.clone());
+    let cookie = res.headers.get::<SetCookie>().and_then(|x| Some(Cookie(x.0.clone())));
     for i in &items { 
         println!("{}", i); 
-        println!("text: {}", i.walk(&mut client, &cookie));
+        println!("text: {}", i.walk(&mut client, cookie.clone()));
         println!("");
         sleep(Duration::new(sleep_time,0));
     }
